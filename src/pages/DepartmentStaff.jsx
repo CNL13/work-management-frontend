@@ -8,7 +8,7 @@ import RoleBadge from '../components/RoleBadge'
 export default function DepartmentStaff() {
   const [members, setMembers] = useState([])
   const [myUnit, setMyUnit] = useState(null)
-  const [allUsers, setAllUsers] = useState([])  // user chưa có phòng
+  const [allUsers, setAllUsers] = useState([])
   const [showAdd, setShowAdd] = useState(false)
   const [selectedUserId, setSelectedUserId] = useState('')
   const { isManager } = useAuth()
@@ -70,20 +70,22 @@ export default function DepartmentStaff() {
     }
   }
 
-  // User chưa trong phòng này
   const availableUsers = allUsers.filter(
-    u => u.role === 'User' && !members.find(m => m.id === u.id)
+    u => u.role === 'User' && 
+         (!u.unitId || u.unitId === '00000000-0000-0000-0000-000000000000') && 
+         !members.find(m => m.id === u.id)
   )
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="page-container page-enter">
       <Navbar />
-      <div className="p-6 max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-800">Nhân sự phòng</h2>
+      <div style={{ padding: '1.75rem 2rem', maxWidth: '1200px', margin: '0 auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.75rem', flexWrap: 'wrap', gap: '1.5rem' }}>
+          <div className="animate-slide-left">
+            <h2 className="section-title">🏘️ Nhân sự phòng</h2>
             {myUnit && (
-              <p className="text-sm text-blue-600 font-semibold mt-1">
+              <p style={{ color: 'var(--primary-light)', fontWeight: 700, fontSize: '0.9rem', marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'currentColor' }} className="ping-dot" />
                 {myUnit.name}
               </p>
             )}
@@ -91,109 +93,110 @@ export default function DepartmentStaff() {
           {isManager && (
             <button
               onClick={() => {
-                setShowAdd(true)
-                fetchAllUsers()
+                setShowAdd(!showAdd)
+                if (!showAdd) fetchAllUsers()
               }}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-semibold"
+              className="btn-primary animate-slide-right"
             >
-              + Thêm nhân viên
+              {showAdd ? '✕ Đóng' : '+ Thêm nhân viên'}
             </button>
           )}
         </div>
 
-
-
-        {/* Form thêm nhân viên */}
         {showAdd && isManager && (
-          <div className="bg-white rounded-xl shadow p-6 mb-6">
-            <h3 className="text-lg font-semibold text-gray-700 mb-4">Thêm nhân viên vào phòng</h3>
-            <form onSubmit={handleAddMember} className="flex gap-3">
+          <div className="glass-panel animate-scale-in" style={{ padding: '1.5rem', marginBottom: '2rem', borderRadius: '1rem', borderLeft: '4px solid var(--primary)' }}>
+            <h3 style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)', marginBottom: '1.25rem' }}>
+              ➕ Thêm nhân viên vào phòng
+            </h3>
+            <form onSubmit={handleAddMember} style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
               <select
                 value={selectedUserId}
                 onChange={(e) => setSelectedUserId(e.target.value)}
-                className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="input-modern"
+                style={{ flex: 1, minWidth: '280px' }}
                 required
               >
-                <option value="">-- Chọn nhân viên --</option>
+                <option value="">-- Chọn nhân viên đang trống --</option>
                 {availableUsers.map(u => (
                   <option key={u.id} value={u.id}>
-                    {u.fullName || u.username} ({u.employeeCode})
+                    {u.fullName || u.username} ({u.employeeCode || 'No code'})
                   </option>
                 ))}
-                {availableUsers.length === 0 && (
-                  <option disabled>Không có nhân viên nào khả dụng</option>
-                )}
               </select>
-              <button
-                type="submit"
-                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-semibold"
-              >
-                Thêm
+              <button type="submit" className="btn-primary" style={{ minWidth: '120px' }}>
+                Xác nhận thêm
               </button>
-              <button
-                type="button"
-                onClick={() => { setShowAdd(false); setSelectedUserId('') }}
-                className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 font-semibold"
-              >
+              <button type="button" onClick={() => setShowAdd(false)} className="btn-secondary">
                 Hủy
               </button>
             </form>
+            {availableUsers.length === 0 && (
+              <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.75rem' }}>
+                💡 Không tìm thấy nhân viên nào chưa có phòng ban.
+              </p>
+            )}
           </div>
         )}
 
-        {/* Danh sách nhân sự */}
-        <div className="bg-white rounded-xl shadow overflow-hidden">
-          <div className="px-6 py-4 border-b">
-            <h3 className="font-semibold text-gray-700">
-              Danh sách nhân sự ({members.length} người)
+        <div className="glass-panel animate-fade-in" style={{ borderRadius: '1.25rem', overflow: 'hidden' }}>
+          <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid rgba(0, 0, 0, 0.07)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3 style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 700, color: 'var(--text-primary)' }}>
+               👥 Danh sách thành viên
             </h3>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+              <span style={{ color: 'var(--primary-light)' }}>{members.length}</span> nhân sự
+            </div>
           </div>
-          <table className="w-full text-sm">
-            <thead className="bg-blue-50 text-blue-700">
-              <tr>
-                <th className="px-4 py-3 text-left">Mã NV</th>
-                <th className="px-4 py-3 text-left">Họ và tên</th>
-                <th className="px-4 py-3 text-left">Tên đăng nhập</th>
-                <th className="px-4 py-3 text-left">Chức vụ</th>
-                {isManager && <th className="px-4 py-3 text-left">Thao tác</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {members.length === 0 ? (
+          <div style={{ overflowX: 'auto' }}>
+            <table className="modern-table">
+              <thead>
                 <tr>
-                  <td colSpan={5} className="text-center py-8 text-gray-400">
-                    Chưa có nhân viên nào trong phòng
-                  </td>
+                  <th style={{ paddingLeft: '1.5rem' }}>Mã NV</th>
+                  <th>Họ và tên</th>
+                  <th>Username</th>
+                  <th>Số điện thoại</th>
+                  <th>Chức vụ</th>
+                  {isManager && <th style={{ paddingRight: '1.5rem', textAlign: 'right' }}>Thao tác</th>}
                 </tr>
-              ) : (
-                members.map((m) => (
-                  <tr key={m.id} className="border-t hover:bg-gray-50">
-                    <td className="px-4 py-3 text-gray-400 text-xs font-mono">
-                      {m.employeeCode || '—'}
+              </thead>
+              <tbody>
+                {members.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>
+                      <p>Chưa có nhân viên nào trực thuộc</p>
                     </td>
-                    <td className="px-4 py-3 font-medium">{m.fullName || '—'}</td>
-                    <td className="px-4 py-3 text-gray-500">{m.username}</td>
-                    <td className="px-4 py-3"><RoleBadge role={m.role} /></td>
-                    {isManager && (
-                      <td className="px-4 py-3">
-                        {/* ✅ Không cho xóa Manager khỏi phòng */}
-                        {m.role !== 'Manager' ? (
-                          <button
-                            onClick={() => handleRemoveMember(m.id, m.fullName || m.username)}
-                            className="text-red-500 hover:underline text-sm font-medium"
-                          >
-                            Xóa khỏi phòng
-                          </button>
-                        ) : (
-                          <span className="text-gray-300 text-xs italic">—</span>
-                        )}
-                      </td>
-                    )}
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  members.map((m) => (
+                    <tr key={m.id}>
+                      <td style={{ paddingLeft: '1.5rem', fontFamily: 'monospace', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                        {m.employeeCode || '—'}
+                      </td>
+                      <td style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{m.fullName || '—'}</td>
+                      <td style={{ color: 'var(--text-secondary)' }}>{m.username}</td>
+                      <td style={{ fontWeight: 700, color: 'var(--accent)' }}>{m.phoneNumber || '—'}</td>
+                      <td><RoleBadge role={m.role} /></td>
+                      {isManager && (
+                        <td style={{ paddingRight: '1.5rem', textAlign: 'right' }}>
+                          {m.role !== 'Manager' ? (
+                            <button
+                              onClick={() => handleRemoveMember(m.id, m.fullName || m.username)}
+                              className="btn-danger"
+                              style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem', borderRadius: '0.5rem' }}
+                            >
+                              Gỡ bỏ
+                            </button>
+                          ) : (
+                            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Quản lý</span>
+                          )}
+                        </td>
+                      )}
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

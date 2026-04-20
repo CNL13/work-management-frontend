@@ -78,7 +78,7 @@ export default function Units() {
       setShowForm(false)
       fetchUnits()
     } catch (err) {
-      toast.error('Thao tác thất bại.')
+      toast.error(err.response?.data?.message || 'Thao tác thất bại.')
     }
   }
 
@@ -90,7 +90,7 @@ export default function Units() {
       if (selectedUnit === id) { setSelectedUnit(null); setMembers([]) }
       fetchUnits()
     } catch (err) {
-      toast.error('Xóa thất bại.')
+      toast.error(err.response?.data?.message || 'Xóa thất bại.')
     }
   }
 
@@ -115,337 +115,205 @@ export default function Units() {
       toast.success('Đã xóa thành viên!')
       fetchMembers(unitId)
     } catch (err) {
-      toast.error('Xóa thành viên thất bại.')
+      toast.error(err.response?.data?.message || 'Xóa thành viên thất bại.')
     }
   }
 
-  // ✅ User — chỉ xem phòng của mình
-  if (!isAdmin && !isManager) {
-    return (
-      <div className="min-h-screen bg-gray-100">
-        <Navbar />
-        <div className="p-6 max-w-3xl mx-auto">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">Phòng của tôi</h2>
-          {!myUnit ? (
-            <div className="bg-white rounded-xl shadow p-8 text-center text-gray-400">
-              Bạn chưa được gán vào phòng nào
-            </div>
-          ) : (
-            <div className="bg-white rounded-xl shadow overflow-hidden">
-              <div className="px-6 py-4 border-b bg-blue-50">
-                <h3 className="text-lg font-semibold text-blue-700">{myUnit.name}</h3>
-                <p className="text-sm text-gray-500 mt-1">Danh sách thành viên</p>
-              </div>
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 text-gray-600">
-                  <tr>
-                    <th className="px-4 py-3 text-left">Mã NV</th>
-                    <th className="px-4 py-3 text-left">Họ tên</th>
-                    <th className="px-4 py-3 text-left">Vai trò</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {members.length === 0 ? (
-                    <tr><td colSpan={3} className="text-center py-6 text-gray-400">Chưa có thành viên</td></tr>
-                  ) : (
-                    members.map(m => (
-                      <tr key={m.id} className="border-t hover:bg-gray-50">
-                        <td className="px-4 py-3 text-gray-400 text-xs font-mono">{m.employeeCode || '—'}</td>
-                        <td className="px-4 py-3 font-medium">{m.fullName || m.username}</td>
-                        <td className="px-4 py-3"><RoleBadge role={m.role} /></td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+  // --- RENDERING HELPERS ---
+
+  const renderUnitsTable = () => (
+    <div className="glass-panel animate-slide-left" style={{ borderRadius: '1rem', overflow: 'hidden' }}>
+      <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(0, 0, 0, 0.07)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h3 style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 700, color: 'var(--text-primary)' }}>Danh sách đơn vị</h3>
+        <span className="badge badge-blue">{units.length} phòng</span>
       </div>
-    )
-  }
-
-  // ✅ Admin — quản lý đơn vị + xem thành viên (không thêm/xóa thành viên)
-  if (isAdmin) {
-    return (
-      <div className="min-h-screen bg-gray-100">
-        <Navbar />
-        <div className="p-6 max-w-5xl mx-auto">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-800">Quản lý đơn vị</h2>
-            <button
-              onClick={() => { setShowForm(true); setEditId(null); setForm({ name: '' }) }}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-semibold"
-            >
-              + Thêm đơn vị
-            </button>
-          </div>
-
-
-
-          {/* Form tạo/sửa */}
-          {showForm && (
-            <div className="bg-white rounded-xl shadow p-6 mb-6">
-              <h3 className="text-lg font-semibold text-gray-700 mb-4">
-                {editId ? 'Chỉnh sửa đơn vị' : 'Thêm đơn vị mới'}
-              </h3>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tên đơn vị</label>
-                  <input
-                    type="text"
-                    value={form.name}
-                    onChange={(e) => setForm({ name: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Nhập tên đơn vị"
-                    required
-                  />
-                </div>
-                <div className="flex gap-3">
-                  <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-semibold">
-                    {editId ? 'Cập nhật' : 'Thêm mới'}
-                  </button>
-                  <button type="button" onClick={() => { setShowForm(false); setEditId(null) }}
-                    className="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 font-semibold">
-                    Hủy
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Danh sách đơn vị */}
-            <div className="bg-white rounded-xl shadow overflow-hidden">
-              <div className="px-4 py-3 border-b bg-blue-50">
-                <h3 className="font-semibold text-blue-700">Danh sách đơn vị</h3>
-              </div>
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 text-gray-600">
-                  <tr>
-                    <th className="px-4 py-3 text-left">Tên đơn vị</th>
-                    <th className="px-4 py-3 text-left">Trưởng phòng</th>
-                    <th className="px-4 py-3 text-left">Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {units.length === 0 ? (
-                    <tr><td colSpan={3} className="text-center py-6 text-gray-400">Chưa có đơn vị nào</td></tr>
-                  ) : (
-                    units.map((unit) => {
-                      // ✅ Tìm manager của phòng này
-                      const manager = allUsers.find(u => u.role === 'Manager' && u.unitId === unit.id)
-                      return (
-                        <tr
-                          key={unit.id}
-                          className={`border-t hover:bg-gray-50 cursor-pointer ${selectedUnit === unit.id ? 'bg-blue-50' : ''}`}
-                          onClick={() => fetchMembers(unit.id)}
-                        >
-                          <td className="px-4 py-3 font-medium">{unit.name}</td>
-                          <td className="px-4 py-3 text-sm">
-                            {manager ? (
-                              <span className="text-purple-700 font-medium">
-                                {manager.fullName || manager.username}
-                              </span>
-                            ) : (
-                              <span className="text-gray-400 text-xs italic">Chưa có</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="flex gap-2" onClick={e => e.stopPropagation()}>
-                              <button
-                                onClick={() => { setEditId(unit.id); setForm({ name: unit.name }); setShowForm(true) }}
-                                className="text-blue-600 hover:underline text-xs font-medium"
-                              >
-                                Sửa
-                              </button>
-                              <button
-                                onClick={() => handleDelete(unit.id)}
-                                className="text-red-500 hover:underline text-xs font-medium"
-                              >
-                                Xóa
-                              </button>
-                              <button
-                                onClick={() => fetchMembers(unit.id)}
-                                className="text-green-600 hover:underline text-xs font-medium"
-                              >
-                                Xem
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      )
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Panel xem thành viên — Admin chỉ xem, không thêm/xóa */}
-            <div className="bg-white rounded-xl shadow overflow-hidden">
-              <div className="px-4 py-3 border-b bg-blue-50">
-                <h3 className="font-semibold text-blue-700">
-                  {selectedUnit
-                    ? `Thành viên: ${units.find(u => u.id === selectedUnit)?.name || ''}`
-                    : 'Chọn đơn vị để xem thành viên'}
-                </h3>
-              </div>
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 text-gray-600">
-                  <tr>
-                    <th className="px-4 py-3 text-left">Mã NV</th>
-                    <th className="px-4 py-3 text-left">Họ tên</th>
-                    <th className="px-4 py-3 text-left">Vai trò</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {!selectedUnit ? (
-                    <tr><td colSpan={3} className="text-center py-6 text-gray-400">Chọn đơn vị bên trái</td></tr>
-                  ) : members.length === 0 ? (
-                    <tr><td colSpan={3} className="text-center py-6 text-gray-400">Chưa có thành viên</td></tr>
-                  ) : (
-                    members.map(m => (
-                      <tr key={m.id} className="border-t hover:bg-gray-50">
-                        <td className="px-4 py-3 min-w-[100px]">
-                          <span className="text-[10px] font-mono text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">
-                            {m.employeeCode || '—'}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 font-medium text-gray-800">{m.fullName || m.username}</td>
-                        <td className="px-4 py-3"><RoleBadge role={m.role} /></td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // ✅ Manager — quản lý thành viên phòng mình
-  return (
-    <div className="min-h-screen bg-gray-100">
-      <Navbar />
-      <div className="p-6 max-w-5xl mx-auto">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">Quản lý đơn vị</h2>
-
-
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white rounded-xl shadow overflow-hidden">
-            <div className="px-4 py-3 border-b bg-blue-50">
-              <h3 className="font-semibold text-blue-700">Danh sách đơn vị</h3>
-            </div>
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-gray-600">
-                <tr>
-                  <th className="px-4 py-3 text-left">Tên đơn vị</th>
-                  <th className="px-4 py-3 text-left">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {units.map((unit) => (
+      <div style={{ overflowX: 'auto' }}>
+        <table className="modern-table">
+          <thead>
+            <tr>
+              <th style={{ paddingLeft: '1.5rem' }}>Tên đơn vị</th>
+              <th>Quản lý</th>
+              {isAdmin && <th style={{ paddingRight: '1.5rem', textAlign: 'right' }}>Thao tác</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {units.length === 0 ? (
+              <tr><td colSpan={3} style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>Chưa có đơn vị</td></tr>
+            ) : (
+              units.map((unit) => {
+                const manager = allUsers.find(u => u.role === 'Manager' && u.unitId === unit.id)
+                const isActive = selectedUnit === unit.id
+                return (
                   <tr
                     key={unit.id}
-                    className={`border-t hover:bg-gray-50 cursor-pointer ${selectedUnit === unit.id ? 'bg-blue-50' : ''}`}
                     onClick={() => fetchMembers(unit.id)}
+                    style={{ 
+                      cursor: 'pointer', 
+                      background: isActive ? 'rgba(79,70,229,0.1)' : 'transparent',
+                      borderLeft: isActive ? '3px solid var(--primary-light)' : '3px solid transparent',
+                      transition: 'all 0.2s ease'
+                    }}
                   >
-                    <td className="px-4 py-3 font-medium">{unit.name}</td>
-                    <td className="px-4 py-3">
-                      <button onClick={() => fetchMembers(unit.id)} className="text-green-600 hover:underline text-xs font-medium">
-                        Xem thành viên
-                      </button>
+                    <td style={{ paddingLeft: '1.5rem', fontWeight: 700, color: 'var(--text-primary)' }}>{unit.name}</td>
+                    <td style={{ color: 'var(--primary-light)', fontSize: '0.8125rem' }}>
+                      {manager ? manager.fullName : <span style={{ color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '0.75rem' }}>Chưa có</span>}
                     </td>
+                    {isAdmin && (
+                      <td style={{ paddingRight: '1.5rem', textAlign: 'right' }}>
+                        <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end' }} onClick={e => e.stopPropagation()}>
+                          <button onClick={() => { setEditId(unit.id); setForm({ name: unit.name }); setShowForm(true) }} style={{ color: 'var(--primary-light)', background: 'rgba(79,70,229,0.1)', border: '1px solid rgba(79,70,229,0.2)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.7rem' }}>Sửa</button>
+                          <button onClick={() => handleDelete(unit.id)} style={{ color: 'var(--danger)', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.7rem' }}>Xóa</button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Panel thành viên — Manager có thể thêm/xóa */}
-          <div className="bg-white rounded-xl shadow overflow-hidden">
-            <div className="px-4 py-3 border-b bg-blue-50 flex justify-between items-center">
-              <h3 className="font-semibold text-blue-700">
-                {selectedUnit
-                  ? `Thành viên: ${units.find(u => u.id === selectedUnit)?.name || ''}`
-                  : 'Chọn đơn vị để xem thành viên'}
-              </h3>
-              {selectedUnit && (
-                <button
-                  onClick={() => setShowAddMember(!showAddMember)}
-                  className="bg-blue-600 text-white px-3 py-1 rounded-lg text-xs hover:bg-blue-700 font-semibold"
-                >
-                  + Thêm
-                </button>
-              )}
-            </div>
-
-            {showAddMember && selectedUnit && (
-              <form onSubmit={handleAddMember} className="p-4 border-b bg-gray-50 flex gap-2">
-                <select
-                  value={selectedUserId}
-                  onChange={(e) => setSelectedUserId(e.target.value)}
-                  className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none"
-                  required
-                >
-                  <option value="">-- Chọn nhân viên --</option>
-                  {allUsers
-                    .filter(u => u.role === 'User' && !members.find(m => m.id === u.id))
-                    .map(u => (
-                      <option key={u.id} value={u.id}>
-                        {u.fullName || u.username} ({u.employeeCode})
-                      </option>
-                    ))}
-                </select>
-                <button type="submit" className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">Thêm</button>
-                <button type="button" onClick={() => setShowAddMember(false)} className="bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-sm font-semibold">Hủy</button>
-              </form>
+                )
+              })
             )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
 
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-gray-600">
-                <tr>
-                  <th className="px-4 py-3 text-left">Mã NV</th>
-                  <th className="px-4 py-3 text-left">Họ tên</th>
-                  <th className="px-4 py-3 text-left">Vai trò</th>
-                  <th className="px-4 py-3 text-left">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {!selectedUnit ? (
-                  <tr><td colSpan={4} className="text-center py-6 text-gray-400">Chọn đơn vị bên trái</td></tr>
-                ) : members.length === 0 ? (
-                  <tr><td colSpan={4} className="text-center py-6 text-gray-400">Chưa có thành viên</td></tr>
-                ) : (
-                  members.map(m => (
-                    <tr key={m.id} className="border-t hover:bg-gray-50">
-                      <td className="px-4 py-3">
-                        <span className="text-[10px] font-mono text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">
-                          {m.employeeCode || '—'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 font-medium text-gray-800">{m.fullName || m.username}</td>
-                      <td className="px-4 py-3"><RoleBadge role={m.role} /></td>
-                      <td className="px-4 py-3">
-                        {m.role !== 'Manager' && (
-                          <button
-                            onClick={() => handleRemoveMember(selectedUnit, m.id)}
-                            className="text-red-500 hover:underline text-xs font-medium"
-                          >
-                            Xóa
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+  const renderMembersTable = (isEditable = false) => (
+    <div className="glass-panel animate-slide-right" style={{ borderRadius: '1rem', overflow: 'hidden' }}>
+      <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(0, 0, 0, 0.07)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h3 style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span>👤</span>
+          <span>Thành viên: {units.find(u => u.id === selectedUnit)?.name || ''}</span>
+        </h3>
+        {isEditable && selectedUnit && (
+          <button onClick={() => setShowAddMember(!showAddMember)} className="btn-primary" style={{ padding: '0.4rem 0.75rem', fontSize: '0.75rem' }}>
+            {showAddMember ? '✕ Đóng' : '+ Thêm'}
+          </button>
+        )}
+      </div>
+
+      {showAddMember && isEditable && selectedUnit && (
+        <div className="animate-slide-down" style={{ padding: '1rem', background: 'rgba(0, 0, 0, 0.02)', borderBottom: '1px solid rgba(0, 0, 0, 0.05)' }}>
+          <form onSubmit={handleAddMember} style={{ display: 'flex', gap: '0.5rem' }}>
+            <select
+              value={selectedUserId}
+              onChange={(e) => setSelectedUserId(e.target.value)}
+              className="input-modern"
+              style={{ padding: '0.4rem' }}
+              required
+            >
+              <option value="">-- Chọn nhân viên --</option>
+              {allUsers
+                .filter(u => u.role === 'User' && !members.find(m => m.id === u.id))
+                .map(u => (
+                  <option key={u.id} value={u.id}>{u.fullName} ({u.employeeCode})</option>
+                ))}
+            </select>
+            <button type="submit" className="btn-primary" style={{ padding: '0.4rem 1rem' }}>Thêm</button>
+          </form>
         </div>
+      )}
+
+      <div style={{ overflowX: 'auto' }}>
+        <table className="modern-table">
+          <thead>
+            <tr>
+              <th style={{ paddingLeft: '1.5rem' }}>Mã NV</th>
+              <th>Họ tên</th>
+              <th>Vai trò</th>
+              {isEditable && <th style={{ paddingRight: '1.5rem', textAlign: 'right' }}>Action</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {!selectedUnit ? (
+              <tr><td colSpan={4} style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>Hãy chọn một đơn vị</td></tr>
+            ) : members.length === 0 ? (
+              <tr><td colSpan={4} style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>Chưa có thành viên nào</td></tr>
+            ) : (
+              members.map(m => (
+                <tr key={m.id}>
+                  <td style={{ paddingLeft: '1.5rem', fontFamily: 'monospace', color: 'var(--text-muted)', fontSize: '0.7rem' }}>{m.employeeCode || '—'}</td>
+                  <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{m.fullName || m.username}</td>
+                  <td><RoleBadge role={m.role} /></td>
+                  {isEditable && (
+                    <td style={{ paddingRight: '1.5rem', textAlign: 'right' }}>
+                      {m.role !== 'Manager' && (
+                        <button onClick={() => handleRemoveMember(selectedUnit, m.id)} className="btn-danger" style={{ padding: '3px 8px', fontSize: '0.7rem', borderRadius: '4px' }}>Xóa</button>
+                      )}
+                    </td>
+                  )}
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+
+  // --- FINAL RENDER ---
+
+  return (
+    <div className="page-container page-enter">
+      <Navbar />
+      <div style={{ padding: '1.75rem 2rem', maxWidth: '1300px', margin: '0 auto' }}>
+        
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.75rem', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <h2 className="section-title">🏛️ Quản lý Đơn vị</h2>
+            <p className="section-subtitle">Tổ chức phòng ban và quản lý nhân sự trực thuộc</p>
+          </div>
+          {isAdmin && (
+            <button
+              onClick={() => { setShowForm(!showForm); setEditId(null); setForm({ name: '' }) }}
+              className="btn-primary animate-slide-right"
+            >
+              {showForm ? '✕ Đóng form' : '+ Thêm đơn vị'}
+            </button>
+          )}
+        </div>
+
+        {/* Form create/edit (Admin only) */}
+        {showForm && isAdmin && (
+          <div className="glass-panel animate-scale-in" style={{ padding: '1.5rem', marginBottom: '2rem', borderRadius: '1rem', borderLeft: '4px solid var(--primary)' }}>
+            <h3 style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)', marginBottom: '1.25rem' }}>
+              {editId ? '📝 Chỉnh sửa thông tin đơn vị' : '➕ Tạo đơn vị phòng ban mới'}
+            </h3>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+              <input
+                type="text"
+                value={form.name}
+                onChange={(e) => setForm({ name: e.target.value })}
+                className="input-modern"
+                style={{ flex: 1, minWidth: '300px' }}
+                placeholder="Ví dụ: Phòng Kỹ thuật, Tổ Hành chính..."
+                required
+              />
+              <button type="submit" className="btn-primary" style={{ padding: '0.75rem 1.5rem' }}>
+                {editId ? 'Cập nhật' : 'Tạo mới ngay'}
+              </button>
+              <button type="button" onClick={() => { setShowForm(false); setEditId(null) }} className="btn-secondary">Hủy</button>
+            </form>
+          </div>
+        )}
+
+        {/* User View — Just see my unit */}
+        {!isAdmin && !isManager ? (
+           <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+             {!myUnit ? (
+               <div className="glass-panel animate-pulse-glow" style={{ padding: '4rem', textAlign: 'center', borderRadius: '1.5rem' }}>
+                 <p style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Bạn chưa được gán vào đơn vị nào. Vui lòng liên hệ Admin.</p>
+               </div>
+             ) : (
+               renderMembersTable(false)
+             )}
+           </div>
+        ) : (
+          /* Admin & Manager View — Split grid */
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem' }}>
+            {renderUnitsTable()}
+            {renderMembersTable(isManager)}
+          </div>
+        )}
+
       </div>
     </div>
   )

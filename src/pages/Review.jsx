@@ -5,7 +5,7 @@ import Navbar from '../components/Navbar'
 import StatusBadge from '../components/StatusBadge'
 
 export default function Review() {
-  const [tasks, setTasks] = useState([])       // ✅ thêm để lấy tên task
+  const [tasks, setTasks] = useState([])
   const [progresses, setProgresses] = useState([])
   const [selectedId, setSelectedId] = useState(null)
   const [comment, setComment] = useState('')
@@ -34,7 +34,6 @@ export default function Review() {
     }
   }
 
-  // ✅ Lấy tên task từ taskId
   const getTaskTitle = (taskId) => {
     const task = tasks.find(t => t.id === taskId)
     return task ? task.title : taskId
@@ -47,14 +46,14 @@ export default function Review() {
       await api.post('/review', {
         progressId: selectedId,
         approve,
-        comment
+        comment,
       })
-      toast.success(approve ? '✓ Đã phê duyệt báo cáo!' : '✗ Đã từ chối báo cáo!')
+      toast.success(approve ? '✓ Đã phê duyệt báo cáo thành công!' : '✗ Đã từ chối báo cáo!')
       setSelectedId(null)
       setComment('')
       fetchProgresses()
     } catch (err) {
-      toast.error('Thao tác thất bại. Vui lòng thử lại.')
+      toast.error(err.response?.data?.message || 'Thao tác thất bại. Vui lòng thử lại.')
     } finally {
       setLoading(false)
     }
@@ -62,244 +61,215 @@ export default function Review() {
 
   const pendingProgresses = progresses.filter(p => p.status === 'Submitted')
 
-
-
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="page-container page-enter">
       <Navbar />
-      <div className="p-6 max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-800 font-display">Phê duyệt báo cáo</h2>
-          <div className="flex gap-2">
-            <span className="bg-white px-3 py-1 rounded-full border border-gray-200 text-xs font-bold text-gray-500 shadow-sm">
-              {progresses.length} Tổng số báo cáo
-            </span>
+      <div style={{ padding: '2rem', maxWidth: '1450px', margin: '0 auto' }}>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem', flexWrap: 'wrap', gap: '1.5rem' }}>
+          <div className="animate-slide-left">
+            <h2 className="section-title" style={{ fontSize: '1.85rem' }}>✅ Trung tâm Phê duyệt</h2>
+            <p className="section-subtitle">Thẩm định và đánh giá tiến độ thực hiện công việc của nhân sự</p>
+          </div>
+          <div style={{ display: 'flex', gap: '0.875rem' }} className="animate-fade-in">
+            <div className="glass-card" style={{ padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.625rem', border: '1px solid rgba(245, 158, 11, 0.3)', background: 'rgba(245, 158, 11, 0.05)' }}>
+               <span className="ping-dot" style={{ color: '#f59e0b' }}>●</span>
+               <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#fcd34d' }}>{pendingProgresses.length} ĐANG CHỜ</span>
+            </div>
+            <div className="glass-card" style={{ padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.625rem', border: '1px solid rgba(99, 102, 241, 0.3)', background: 'rgba(99, 102, 241, 0.05)' }}>
+               <span style={{ fontSize: '1.1rem' }}>📋</span>
+               <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#a5b4fc' }}>{progresses.length} LỊCH SỬ</span>
+            </div>
           </div>
         </div>
 
-        {/* Báo cáo chờ duyệt */}
-        <div className="glass-card rounded-2xl overflow-hidden mb-8 animate-fade-in">
-          <div className="px-6 py-4 border-b bg-yellow-50/50 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-6 bg-yellow-500 rounded-full"></span>
-              <h3 className="text-lg font-bold text-gray-700">Công việc chờ phê duyệt</h3>
-            </div>
-            <span className="bg-yellow-500 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-sm shadow-yellow-200 uppercase tracking-wider">
-              {pendingProgresses.length} Chờ xử lý
-            </span>
-          </div>
+        <div className="grid lg:grid-cols-[1fr_380px] gap-8 items-start">
           
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                <tr>
-                  <th className="px-6 py-4 text-left w-12">Chọn</th>
-                  <th className="px-6 py-4 text-left">Công việc / Người gửi</th>
-                  <th className="px-6 py-4 text-left">Tiến độ</th>
-                  <th className="px-6 py-4 text-left">Minh chứng</th> {/* ✅ MỚI */}
-                  <th className="px-6 py-4 text-left">Mô tả</th>
-                  <th className="px-6 py-4 text-left">Trạng thái</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 italic-gray-400">
-                {pendingProgresses.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="text-center py-16 text-gray-400">
-                      Hiện tại không có báo cáo nào cần phê duyệt
-                    </td>
-                  </tr>
-                ) : (
-                  pendingProgresses.map((p) => (
-                    <tr
-                      key={p.id}
-                      className={`hover:bg-blue-50/50 transition-colors cursor-pointer ${selectedId === p.id ? 'bg-blue-50/80 shadow-inner' : ''}`}
-                      onClick={() => setSelectedId(p.id)}
-                    >
-                      <td className="px-6 py-4">
-                        <input
-                          type="radio"
-                          checked={selectedId === p.id}
-                          onChange={() => setSelectedId(p.id)}
-                          className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 pointer-events-none"
-                        />
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-col">
-                          <span className="font-bold text-gray-800">{getTaskTitle(p.taskId)}</span>
-                          <div className="flex items-center gap-1 mt-1 text-[10px]">
-                            <span className="text-gray-500 font-medium">{p.userFullName}</span>
-                            <span className="text-blue-500 font-mono bg-blue-50 px-1 rounded">{p.userEmployeeCode}</span>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <div className="w-16 bg-gray-200 rounded-full h-1.5 flex-shrink-0">
-                            <div className="bg-blue-600 h-1.5 rounded-full" style={{ width: `${p.percent}%` }} />
-                          </div>
-                          <span className="font-bold text-gray-700 whitespace-nowrap">{p.percent}%</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        {p.files?.length > 0 ? (
-                          <div className="flex flex-wrap gap-2">
-                            {p.files.map(f => {
-                              const isImage = f.fileName.match(/\.(jpg|jpeg|png|gif)$/i);
-                              return (
-                                <a 
-                                  key={f.id}
-                                  href={`${api.defaults.baseURL}/upload/${f.id}`}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="group relative flex items-center gap-2 bg-white border border-gray-200 px-3 py-1.5 rounded-lg hover:border-blue-300 transition-colors shadow-sm"
-                                  title={f.fileName}
-                                >
-                                  {isImage ? (
-                                    <div className="w-8 h-8 rounded shrink-0 overflow-hidden bg-gray-50 border border-gray-100 flex items-center justify-center">
-                                      <img src={`${api.defaults.baseURL}/upload/${f.id}`} alt="preview" className="object-cover w-full h-full" />
-                                    </div>
-                                  ) : (
-                                    <span className="text-lg">📄</span>
-                                  )}
-                                  <span className="text-blue-600 group-hover:text-blue-800 text-xs font-bold leading-tight">
-                                    Kiểm tra
-                                  </span>
-                                </a>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          <span className="text-gray-300 text-[10px] italic">Không có</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-gray-500 text-xs truncate max-w-[150px]">{p.description}</td>
-                      <td className="px-6 py-4">
-                        <StatusBadge status={p.status} submittedLabel="Chờ duyệt" />
-                      </td>
+          <div className="flex flex-col gap-8">
+            <div className="glass-panel" style={{ borderRadius: '1.75rem', overflow: 'hidden', border: '1px solid rgba(0, 0, 0, 0.08)' }}>
+              <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid rgba(0, 0, 0, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(0, 0, 0, 0.3)' }}>
+                  <h3 style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 800, fontSize: '1.1rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+                    <span className="animate-float-premium">⏳</span> Báo cáo mới nhận
+                  </h3>
+              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <table className="modern-table">
+                  <thead>
+                    <tr>
+                      <th style={{ paddingLeft: '2rem' }}>Thành viên</th>
+                      <th>Nhiệm vụ</th>
+                      <th style={{ textAlign: 'center' }}>Tiến độ</th>
+                      <th>Mô tả</th>
+                      <th style={{ textAlign: 'center' }}>Minh chứng</th>
+                      <th style={{ paddingRight: '2rem', textAlign: 'right' }}>Thao tác</th>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Action Panel (Floating Effect) */}
-        {selectedId && (
-          <div className="glass-card rounded-2xl p-6 mb-8 border-l-4 border-blue-600 animate-fade-in shadow-xl">
-            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <span className="text-xl">✍️</span>
-              <span>Phê duyệt báo cáo của:</span>
-              <span className="text-blue-600">
-                {(() => {
-                  const p = pendingProgresses.find(x => x.id === selectedId)
-                  return p ? `${p.userFullName} — ${getTaskTitle(p.taskId)}` : selectedId?.substring(0, 8) + '...'
-                })()}
-              </span>
-            </h3>
-            <div className="mb-6">
-              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">
-                Ghi chú / Phản hồi cho nhân viên
-              </label>
-              <textarea
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50/50 transition-all font-medium text-gray-700"
-                rows={3}
-                placeholder="Ví dụ: Công việc hoàn thành tốt, hoặc Cần bổ sung thêm thông tin..."
-              />
+                  </thead>
+                  <tbody className="stagger-children">
+                    {pendingProgresses.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} style={{ textAlign: 'center', padding: '10rem 2rem' }}>
+                          <div style={{ fontSize: '4rem', marginBottom: '1.5rem', opacity: 0.2 }}>✨</div>
+                          <p style={{ fontWeight: 800, color: 'var(--text-muted)', fontSize: '1rem' }}>Hệ thống đã xử lý hết báo cáo</p>
+                        </td>
+                      </tr>
+                    ) : (
+                      pendingProgresses.map((p, i) => (
+                        <tr
+                          key={p.id}
+                          onClick={() => setSelectedId(p.id)}
+                          style={{ 
+                            cursor: 'pointer', 
+                            background: selectedId === p.id ? 'rgba(79,70,229,0.08)' : 'transparent', 
+                            borderLeft: selectedId === p.id ? '4px solid var(--primary-light)' : '4px solid transparent',
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            animationDelay: `${i * 0.05}s`
+                          }}
+                        >
+                          <td style={{ paddingLeft: '2rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                               <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: 'linear-gradient(135deg, #4f46e5, #06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: 'white', fontSize: '0.75rem' }}>{p.userFullName?.[0] || 'U'}</div>
+                               <div>
+                                 <div style={{ fontWeight: 800, color: 'var(--text-primary)', fontSize: '0.875rem' }}>{p.userFullName}</div>
+                                 <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{p.userEmployeeCode}</div>
+                               </div>
+                            </div>
+                          </td>
+                          <td>
+                            <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.875rem', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{getTaskTitle(p.taskId)}</div>
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.75rem' }}>
+                              <div className="progress-track" style={{ width: '40px', height: '6px' }}>
+                                <div className="progress-fill" style={{ width: `${p.percent}%`, background: 'linear-gradient(90deg, #4f46e5, #06b6d4)' }} />
+                              </div>
+                              <span style={{ fontWeight: 900, color: 'var(--primary-light)', fontSize: '0.8rem' }}>{p.percent}%</span>
+                            </div>
+                          </td>
+                          <td>
+                             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontStyle: 'italic' }}>
+                               {p.description || '—'}
+                             </div>
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            {p.files?.length > 0 ? (
+                              <button
+                                onClick={e => { e.stopPropagation(); window.open(`${api.defaults.baseURL}/upload/${p.files[0].id}`, '_blank') }}
+                                className="hover-glow"
+                                style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', background: 'rgba(6,182,212,0.1)', border: '1px solid rgba(6,182,212,0.2)', color: 'var(--accent)', fontSize: '0.7rem', fontWeight: 900, cursor: 'pointer' }}
+                              >
+                                TÀI LIỆU
+                              </button>
+                            ) : <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>—</span>}
+                          </td>
+                          <td style={{ paddingRight: '2rem', textAlign: 'right' }}>
+                             <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: selectedId === p.id ? '5px solid var(--primary-light)' : '2px solid rgba(0, 0, 0, 0.1)', display: 'inline-block', transition: 'all 0.2s' }} />
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
-            <div className="flex gap-4">
-              <button
-                onClick={() => handleReview(true)}
-                disabled={loading}
-                className="flex-1 bg-green-600 text-white px-6 py-3 rounded-xl hover:bg-green-700 font-bold shadow-lg shadow-green-100 transition-all disabled:opacity-50 h-12"
-              >
-                {loading ? '...' : '✓ Duyệt và Hoàn thành'}
-              </button>
-              <button
-                onClick={() => handleReview(false)}
-                disabled={loading}
-                className="flex-1 bg-red-500 text-white px-6 py-3 rounded-xl hover:bg-red-600 font-bold shadow-lg shadow-red-100 transition-all disabled:opacity-50 h-12"
-              >
-                {loading ? '...' : '✗ Từ chối báo cáo'}
-              </button>
-              <button
-                onClick={() => { setSelectedId(null); setComment('') }}
-                className="px-6 py-3 rounded-xl bg-gray-100 text-gray-500 font-bold hover:bg-gray-200 transition-all h-12"
-              >
-                Đóng
-              </button>
+
+            <div className="glass-panel animate-fade-in" style={{ borderRadius: '1.75rem', overflow: 'hidden', border: '1px solid rgba(0, 0, 0, 0.08)' }}>
+              <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid rgba(0, 0, 0, 0.05)', background: 'rgba(0, 0, 0, 0.3)' }}>
+                <h3 style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 800, fontSize: '1.1rem', color: 'var(--text-primary)' }}>📜 Lịch sử xét duyệt</h3>
+              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <table className="modern-table">
+                  <thead>
+                    <tr>
+                      <th style={{ paddingLeft: '2rem' }}>Thành viên</th>
+                      <th>Nhiệm vụ</th>
+                      <th style={{ textAlign: 'center' }}>Kết quả</th>
+                      <th style={{ textAlign: 'right', paddingRight: '2rem' }}>Thời điểm</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {progresses.length === 0 ? (
+                      <tr><td colSpan={4} style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>Chưa có bản ghi nào</td></tr>
+                    ) : (
+                      progresses.map((p, i) => (
+                        <tr key={p.id}>
+                          <td style={{ paddingLeft: '2rem' }}>{p.userFullName}</td>
+                          <td style={{ fontWeight: 800, color: 'var(--text-primary)' }}>{getTaskTitle(p.taskId)}</td>
+                          <td style={{ textAlign: 'center' }}>
+                             <StatusBadge status={p.status} submittedLabel="Chờ duyệt" />
+                          </td>
+                          <td style={{ paddingRight: '2rem', textAlign: 'right', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                            {p.updatedAt ? new Date(p.updatedAt + "Z").toLocaleString('vi-VN') : '—'}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
-        )}
 
-        {/* Lịch sử tất cả báo cáo */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-fade-in delay-200">
-          <div className="px-6 py-4 border-b bg-gray-50/50">
-            <h3 className="text-lg font-bold text-gray-800">Lịch sử toàn bộ báo cáo</h3>
+          <div className="flex flex-col gap-6 sticky top-24">
+            {selectedId ? (
+              <div className="glass-panel animate-scale-in" style={{ padding: '2rem', borderRadius: '1.75rem', border: '1px solid rgba(99, 102, 241, 0.3)', background: 'rgba(255, 255, 255, 0.6)' }}>
+                {/* Employee Report Detail */}
+                <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'rgba(79,70,229,0.05)', borderRadius: '1rem', border: '1px solid rgba(79,70,229,0.1)' }}>
+                   <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 900, textTransform: 'uppercase', color: 'var(--primary-light)', marginBottom: '0.5rem' }}>
+                      💬 Lời nhắn từ nhân viên:
+                   </label>
+                   <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)', lineHeight: 1.5, margin: 0 }}>
+                      {progresses.find(p => p.id === selectedId)?.description || '(Không có mô tả)'}
+                   </p>
+                </div>
+
+                <h3 style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '1.5rem', fontSize: '1.15rem' }}>
+                  📝 Phản hồi thẩm định
+                </h3>
+                <div style={{ marginBottom: '2rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '0.75rem', letterSpacing: '0.05em' }}>
+                    Nhận xét chuyên môn
+                  </label>
+                  <textarea
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    className="input-modern"
+                    rows={4}
+                    placeholder="Viết ghi chú phê duyệt hoặc lý do từ chối..."
+                    style={{ borderRadius: '1rem', background: 'rgba(0,0,0,0.2)' }}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <button onClick={() => handleReview(true)} disabled={loading} className="btn-primary" style={{ padding: '1rem', borderRadius: '1rem', fontSize: '0.9rem', boxShadow: '0 10px 20px rgba(16, 185, 129, 0.2)' }}>
+                    {loading ? '...' : '✓ CHẤP THUẬN BÁO CÁO'}
+                  </button>
+                  <button onClick={() => handleReview(false)} disabled={loading} className="btn-danger" style={{ padding: '1rem', borderRadius: '1rem', fontSize: '0.9rem', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#ef4444', background: 'rgba(239, 68, 68, 0.05)' }}>
+                    {loading ? '...' : '✕ TỪ CHỐI & YÊU CẦU LÀM LẠI'}
+                  </button>
+                  <button onClick={() => setSelectedId(null)} className="btn-secondary" style={{ padding: '0.875rem', borderRadius: '1rem', border: 'none', background: 'transparent', color: 'var(--text-muted)', fontWeight: 800 }}>
+                    HỦY THAO TÁC
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="glass-panel" style={{ padding: '2.5rem 2rem', borderRadius: '1.75rem', textAlign: 'center', background: 'rgba(0, 0, 0, 0.2)', border: '1px dashed rgba(0, 0, 0, 0.06)' }}>
+                 <div style={{ fontSize: '3rem', marginBottom: '1.5rem', opacity: 0.3 }} className="animate-float-premium">📬</div>
+                 <h4 style={{ color: 'var(--text-primary)', fontWeight: 800, marginBottom: '0.75rem' }}>Chưa chọn báo cáo</h4>
+                 <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>Chọn một bản ghi bên trái để bắt đầu quy trình phê duyệt hoặc từ chối tiến độ.</p>
+              </div>
+            )}
+
+            <div className="glass-panel" style={{ padding: '2rem', borderRadius: '1.75rem', background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.05) 0%, rgba(99, 102, 241, 0.05) 100%)', border: '1px solid rgba(6, 182, 212, 0.15)' }}>
+               <h4 style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--accent)', textTransform: 'uppercase', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span>💡</span> QUY TẮC PHÊ DUYỆT
+               </h4>
+               <ul style={{ fontSize: '0.8rem', color: 'var(--text-muted)', padding: 0, margin: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                 <li style={{ display: 'flex', gap: '0.5rem' }}><b>•</b> Việc phê duyệt sẽ cộng điểm thưởng trực tiếp vào KPI của nhân sự.</li>
+                 <li style={{ display: 'flex', gap: '0.5rem' }}><b>•</b> Từ chối sẽ yêu cầu nhân sự nộp lại báo cáo mới kèm chỉnh sửa.</li>
+                 <li style={{ display: 'flex', gap: '0.5rem' }}><b>•</b> Manager nên phản hồi chi tiết để nhân sự rút kinh nghiệm.</li>
+               </ul>
+            </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50/30 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                <tr>
-                  <th className="px-6 py-4 text-left">Công việc</th>
-                  <th className="px-6 py-4 text-left">Người báo cáo</th>
-                  <th className="px-6 py-4 text-left">Tiến độ</th>
-                  <th className="px-6 py-4 text-left">Tài liệu</th>
-                  <th className="px-6 py-4 text-left">Trạng thái</th>
-                  <th className="px-6 py-4 text-left">Cập nhật</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {progresses.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="text-center py-10 text-gray-400 italic">Chưa có dữ liệu</td>
-                  </tr>
-                ) : (
-                  progresses.map((p) => (
-                    <tr key={p.id} className="hover:bg-gray-50/50 transition-colors">
-                      <td className="px-6 py-4 font-bold text-gray-800">{getTaskTitle(p.taskId)}</td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-col text-xs">
-                          <span className="font-bold text-gray-700">{p.userFullName}</span>
-                          <span className="text-[10px] font-mono text-gray-400 bg-gray-50 px-1 rounded w-fit">
-                            {p.userEmployeeCode}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 font-bold text-blue-600">{p.percent}%</td>
-                      <td className="px-6 py-4">
-                        {p.files?.length > 0 ? (
-                          <div className="flex flex-wrap gap-1">
-                            {p.files.map(f => (
-                               <a 
-                                 key={f.id}
-                                 href={`${api.defaults.baseURL}/upload/${f.id}`}
-                                 target="_blank"
-                                 rel="noreferrer"
-                                 className="flex items-center gap-1 bg-gray-50 border border-gray-200 px-2 py-1 rounded hover:bg-blue-50 hover:border-blue-200 transition-colors text-blue-600 text-[10px] font-bold max-w-[120px]"
-                                 title={f.fileName}
-                               >
-                                📎 <span className="truncate">{f.fileName}</span>
-                               </a>
-                            ))}
-                          </div>
-                        ) : '—'}
-                      </td>
-                      <td className="px-6 py-4">
-                        <StatusBadge status={p.status} submittedLabel="Chờ duyệt" />
-                      </td>
-                      <td className="px-6 py-4 text-gray-400 text-[10px] font-medium font-mono">
-                        {p.updatedAt ? new Date(p.updatedAt).toLocaleDateString('vi-VN') : '—'}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+
         </div>
       </div>
     </div>

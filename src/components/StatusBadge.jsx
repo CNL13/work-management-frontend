@@ -1,23 +1,30 @@
 export default function StatusBadge({ status, submittedLabel = 'Đã nộp' }) {
-  const map = {
-    Approved:   'bg-green-100 text-green-700',
-    Rejected:   'bg-red-100 text-red-700',
-    Submitted:  'bg-yellow-100 text-yellow-700',
-    InProgress: 'bg-blue-100 text-blue-700',
-    NotStarted: 'bg-gray-100 text-gray-700',
-  }
-  
-  const label = {
-    Approved:   'Đã phê duyệt',
-    Rejected:   'Bị từ chối',
-    Submitted:  submittedLabel,
-    InProgress: 'Đang thực hiện',
-    NotStarted: 'Chưa bắt đầu',
+  const config = {
+    Approved:   { label: 'Đã phê duyệt', icon: '✅', style: { background: 'rgba(16,185,129,0.1)', color: '#047857', border: '1px solid rgba(16,185,129,0.2)' } },
+    Rejected:   { label: 'Bị từ chối',   icon: '❌', style: { background: 'rgba(239,68,68,0.1)',  color: '#b91c1c', border: '1px solid rgba(239,68,68,0.2)' } },
+    Submitted:  { label: submittedLabel,  icon: '📤', style: { background: 'rgba(245,158,11,0.1)', color: '#b45309', border: '1px solid rgba(245,158,11,0.2)' } },
+    InProgress: { label: 'Đang thực hiện', icon: '⚡', style: { background: 'rgba(99,102,241,0.1)', color: '#4338ca', border: '1px solid rgba(99,102,241,0.2)' } },
+    NotStarted: { label: 'Chưa bắt đầu',  icon: '⏳', style: { background: 'rgba(100,116,139,0.1)', color: '#334155', border: '1px solid rgba(100,116,139,0.2)' } },
   }
 
+  const item = config[status] || { label: status, icon: '•', style: { background: 'rgba(100,116,139,0.15)', color: 'var(--text-muted)', border: '1px solid rgba(100,116,139,0.3)' } }
+
   return (
-    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${map[status] || 'bg-gray-100 text-gray-600'}`}>
-      {label[status] || status}
+    <span style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '0.25rem',
+      padding: '0.2rem 0.625rem',
+      borderRadius: '9999px',
+      fontSize: '0.7rem',
+      fontWeight: 700,
+      textTransform: 'uppercase',
+      letterSpacing: '0.04em',
+      whiteSpace: 'nowrap',
+      ...item.style,
+    }}>
+      <span style={{ fontSize: '0.75rem' }}>{item.icon}</span>
+      {item.label}
     </span>
   )
 }

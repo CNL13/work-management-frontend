@@ -4,10 +4,10 @@ import Navbar from '../components/Navbar'
 import { useAuth } from '../context/AuthContext'
 
 const levelConfig = {
-  'Xuất sắc': { bg: 'bg-emerald-100', text: 'text-emerald-700', border: 'border-emerald-300', bar: 'bg-emerald-500', glow: 'shadow-emerald-200', stroke: '#10b981' },
-  'Tốt':      { bg: 'bg-blue-100',    text: 'text-blue-700',    border: 'border-blue-300',    bar: 'bg-blue-500',    glow: 'shadow-blue-200',    stroke: '#3b82f6' },
-  'Trung bình':{ bg: 'bg-amber-100',  text: 'text-amber-700',   border: 'border-amber-300',   bar: 'bg-amber-500',   glow: 'shadow-amber-200',   stroke: '#f59e0b' },
-  'Yếu':      { bg: 'bg-red-100',     text: 'text-red-700',     border: 'border-red-300',     bar: 'bg-red-500',     glow: 'shadow-red-200',     stroke: '#ef4444' },
+  'Xuất sắc': { text: '#10b981', border: 'rgba(16, 185, 129, 0.4)', bar: '#10b981', glow: 'rgba(16, 185, 129, 0.5)', icon: '✨' },
+  'Tốt':      { text: '#3b82f6', border: 'rgba(59, 130, 246, 0.4)', bar: '#3b82f6', glow: 'rgba(59, 130, 246, 0.5)', icon: '✅' },
+  'Trung bình':{ text: '#f59e0b', border: 'rgba(245, 158, 11, 0.4)', bar: '#f59e0b', glow: 'rgba(245, 158, 11, 0.5)', icon: '⚡' },
+  'Yếu':      { text: '#ef4444', border: 'rgba(239, 68, 68, 0.4)', bar: '#ef4444', glow: 'rgba(239, 68, 68, 0.5)', icon: '🔴' },
 }
 
 function ScoreRing({ score, level }) {
@@ -18,96 +18,105 @@ function ScoreRing({ score, level }) {
   const dash = (pct / 100) * circ
 
   return (
-    <div className="relative flex items-center justify-center w-36 h-36">
-      <svg className="w-36 h-36 -rotate-90" viewBox="0 0 140 140">
-        <circle cx="70" cy="70" r={r} fill="none" stroke="#e2e8f0" strokeWidth="12" />
+    <div className="animate-float-premium" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '160px', height: '160px' }}>
+      <svg width="160" height="160" style={{ transform: 'rotate(-90deg)' }}>
+        <circle cx="80" cy="80" r={r} fill="none" stroke="rgba(0, 0, 0, 0.03)" strokeWidth="14" />
         <circle
-          cx="70" cy="70" r={r} fill="none"
-          stroke={cfg.stroke}
-          strokeWidth="12"
+          cx="80" cy="80" r={r} fill="none"
+          stroke={cfg.bar}
+          strokeWidth="14"
           strokeDasharray={`${dash} ${circ}`}
           strokeLinecap="round"
-          style={{ transition: 'stroke-dasharray 0.7s ease' }}
+          style={{ transition: 'stroke-dasharray 1.8s cubic-bezier(0.34, 1.56, 0.64, 1)', filter: `drop-shadow(0 0 12px ${cfg.glow})` }}
         />
       </svg>
-      <div className="absolute text-center">
-        <span className="text-3xl font-bold text-slate-800">{score}</span>
-        <span className="block text-xs text-slate-400 font-medium">/ 100+</span>
+      <div style={{ position: 'absolute', textAlign: 'center' }}>
+        <span style={{ fontSize: '2.75rem', fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>{score}</span>
+        <span style={{ display: 'block', fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', marginTop: '-4px' }}>KPI Point</span>
       </div>
     </div>
   )
 }
 
-function StatBox({ label, value, sub, color = 'slate' }) {
-  const colors = {
-    slate:   'bg-slate-50 border-slate-200 text-slate-600',
-    emerald: 'bg-emerald-50 border-emerald-200 text-emerald-600',
-    amber:   'bg-amber-50 border-amber-200 text-amber-600',
-    red:     'bg-red-50 border-red-200 text-red-600',
-    blue:    'bg-blue-50 border-blue-200 text-blue-600',
-  }
+function StatBox({ label, value, sub, color = 'var(--primary-light)' }) {
   return (
-    <div className={`rounded-xl border p-4 text-center ${colors[color]}`}>
-      <div className="text-2xl font-bold">{value}</div>
-      <div className="text-xs font-semibold mt-0.5">{label}</div>
-      {sub && <div className="text-xs opacity-70 mt-0.5">{sub}</div>}
+    <div className="glass-card stat-card" style={{ padding: '1.25rem', textAlign: 'center', minWidth: '120px' }}>
+      <div style={{ fontSize: '1.5rem', fontWeight: 900, color: color }}>{value}</div>
+      <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', marginTop: '0.25rem' }}>{label}</div>
+      {sub && <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>{sub}</div>}
     </div>
   )
 }
 
-function KpiCard({ data, isMe = false }) {
+function KpiCard({ data, isMe = false, rank }) {
   const cfg = levelConfig[data.level] || levelConfig['Tốt']
   const pct = Math.min(data.score, 100)
 
   return (
-    <div className={`bg-white rounded-2xl border ${cfg.border} shadow-lg ${cfg.glow} p-5 flex flex-col gap-4 animate-fade-in ${isMe ? 'ring-2 ring-blue-400 ring-offset-2' : ''}`}>
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="font-bold text-slate-800 text-base">{data.fullName}</p>
-          <p className="text-xs text-slate-400 font-mono">{data.employeeCode || '—'}</p>
+    <div className="glass-panel hover-glow animate-fade-in" style={{ 
+      padding: '1.5rem', 
+      borderRadius: '1.5rem', 
+      border: isMe ? '2px solid var(--primary-light)' : `1px solid rgba(0, 0, 0, 0.08)`,
+      boxShadow: isMe ? '0 0 30px rgba(79, 70, 229, 0.2)' : 'none',
+      position: 'relative'
+    }}>
+      {rank && rank <= 3 && (
+        <div style={{ position: 'absolute', top: '-12px', left: '-12px', width: '36px', height: '36px', background: rank === 1 ? 'linear-gradient(135deg, #ffd700, #b8860b)' : rank === 2 ? 'linear-gradient(135deg, #c0c0c0, #808080)' : 'linear-gradient(135deg, #cd7f32, #8b4513)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 900, fontSize: '1rem', boxShadow: '0 5px 15px rgba(0,0,0,0.3)', border: '2px solid rgba(0, 0, 0, 0.2)' }}>
+          {rank}
         </div>
-        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-bold border ${cfg.bg} ${cfg.text} ${cfg.border}`}>
-          <span>{data.levelIcon}</span>
-          <span>{data.level}</span>
+      )}
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+          <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(0, 0, 0, 0.03)', border: '1px solid rgba(0, 0, 0, 0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem' }}>👤</div>
+          <div>
+            <p style={{ fontWeight: 800, color: 'var(--text-primary)', fontSize: '1rem', margin: 0 }}>{data.fullName}</p>
+            <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{data.employeeCode || '—'}</p>
+          </div>
+        </div>
+        <div style={{ 
+          background: `rgba(${cfg.bar === '#10b981' ? '16, 185, 129' : cfg.bar === '#3b82f6' ? '59, 130, 246' : '245, 158, 11'}, 0.1)`,
+          color: cfg.text,
+          border: `1px solid ${cfg.border}`,
+          padding: '0.35rem 0.75rem',
+          borderRadius: '10px',
+          fontSize: '0.7rem',
+          fontWeight: 900,
+          textTransform: 'uppercase'
+        }}>
+          {cfg.icon} {data.level}
         </div>
       </div>
 
-      {/* Score bar */}
-      <div>
-        <div className="flex justify-between text-xs text-slate-500 mb-1.5">
-          <span>Điểm KPI</span>
-          <span className="font-bold text-slate-700">{data.score} điểm</span>
+      <div style={{ marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '0.625rem' }}>
+           <span>Chỉ số: {data.score}</span>
+           <span className="gradient-text">{pct}%</span>
         </div>
-        <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
-          <div
-            className={`h-3 rounded-full ${cfg.bar} transition-all duration-700`}
-            style={{ width: `${pct}%` }}
-          />
+        <div className="progress-track" style={{ height: '8px' }}>
+          <div className="progress-fill" style={{ width: `${pct}%`, background: cfg.bar, boxShadow: `0 0 10px ${cfg.glow}` }} />
         </div>
       </div>
 
-      {/* Stats grid */}
-      <div className="grid grid-cols-3 gap-2 text-center text-xs">
-        <div className="bg-slate-50 rounded-lg p-2">
-          <div className="font-bold text-slate-700 text-base">{data.totalTasks}</div>
-          <div className="text-slate-400">Tổng task</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
+        <div style={{ background: 'rgba(0, 0, 0, 0.03)', padding: '0.625rem', borderRadius: '0.75rem', textAlign: 'center' }}>
+          <div style={{ fontWeight: 900, color: 'var(--text-primary)', fontSize: '1rem' }}>{data.totalTasks}</div>
+          <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>TASKS</div>
         </div>
-        <div className="bg-emerald-50 rounded-lg p-2">
-          <div className="font-bold text-emerald-600 text-base">+{data.bonusPoints}</div>
-          <div className="text-emerald-500">Thưởng</div>
+        <div style={{ background: 'rgba(16, 185, 129, 0.08)', padding: '0.625rem', borderRadius: '0.75rem', textAlign: 'center' }}>
+          <div style={{ fontWeight: 900, color: '#10b981', fontSize: '1rem' }}>+{data.bonusPoints}</div>
+          <div style={{ fontSize: '0.6rem', color: 'rgba(16, 185, 129, 0.8)', textTransform: 'uppercase', fontWeight: 700 }}>BONUS</div>
         </div>
-        <div className="bg-red-50 rounded-lg p-2">
-          <div className="font-bold text-red-500 text-base">-{data.penaltyPoints}</div>
-          <div className="text-red-400">Phạt</div>
+        <div style={{ background: 'rgba(239, 68, 68, 0.08)', padding: '0.625rem', borderRadius: '0.75rem', textAlign: 'center' }}>
+          <div style={{ fontWeight: 900, color: '#ef4444', fontSize: '1rem' }}>-{data.penaltyPoints}</div>
+          <div style={{ fontSize: '0.6rem', color: 'rgba(239, 68, 68, 0.8)', textTransform: 'uppercase', fontWeight: 700 }}>LOST</div>
         </div>
       </div>
 
-      {/* Risk warning */}
       {data.isAtRisk && (
-        <div className="bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-xs text-red-600 flex items-start gap-2">
-          <span>⚠️</span>
-          <span>{data.warningMessage}</span>
+        <div className="animate-pulse-glow" style={{ marginTop: '1.25rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '0.75rem', borderRadius: '0.875rem', fontSize: '0.75rem', color: '#fca5a5', display: 'flex', gap: '0.625rem', alignItems: 'center' }}>
+          <span style={{ fontSize: '1.1rem' }}>⚠️</span> 
+          <span style={{ lineHeight: 1.4 }}>{data.warningMessage}</span>
         </div>
       )}
     </div>
@@ -119,7 +128,7 @@ export default function Performance() {
   const [myKpi, setMyKpi] = useState(null)
   const [unitKpi, setUnitKpi] = useState([])
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState('mine')  // 'mine' | 'unit'
+  const [tab, setTab] = useState('mine')
 
   useEffect(() => {
     fetchData()
@@ -146,248 +155,160 @@ export default function Performance() {
   const canViewUnit = role === 'Manager' || role === 'Admin'
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="page-container page-enter">
       <Navbar />
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* Page header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-800 font-display mb-1">
-            📊 Hiệu suất KPI
-          </h1>
-          <p className="text-slate-500 text-sm">
-            Theo dõi điểm hiệu suất cá nhân dựa trên tiến độ và chất lượng công việc
-          </p>
+      <div style={{ padding: '2rem', maxWidth: '1300px', margin: '0 auto' }}>
+        <div className="animate-slide-left" style={{ marginBottom: '3rem' }}>
+          <h1 className="section-title" style={{ fontSize: '1.85rem' }}>🎯 Phân tích KPI & Hiệu suất</h1>
+          <p className="section-subtitle">Dữ liệu phân tích chi tiết mức độ đóng góp và hoàn thành mục tiêu</p>
         </div>
 
-        {/* Tab switcher */}
         {canViewUnit && (
-          <div className="flex gap-1 bg-slate-100 rounded-xl p-1 w-fit mb-8">
+          <div className="glass-panel" style={{ display: 'flex', gap: '0.5rem', background: 'rgba(255, 255, 255,0.6)', padding: '0.4rem', borderRadius: '1rem', width: 'fit-content', marginBottom: '2.5rem', border: '1px solid rgba(0, 0, 0, 0.06)' }}>
             <button
               onClick={() => setTab('mine')}
-              className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${tab === 'mine' ? 'bg-white shadow text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+              className={tab === 'mine' ? 'btn-primary' : 'btn-secondary'}
+              style={{ border: 'none', background: tab === 'mine' ? undefined : 'transparent', padding: '0.625rem 1.5rem', borderRadius: '0.75rem', fontSize: '0.875rem', fontWeight: 800 }}
             >
-              👤 Của tôi
+              👤 Chỉ số cá nhân
             </button>
             <button
               onClick={() => setTab('unit')}
-              className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${tab === 'unit' ? 'bg-white shadow text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+              className={tab === 'unit' ? 'btn-primary' : 'btn-secondary'}
+              style={{ border: 'none', background: tab === 'unit' ? undefined : 'transparent', padding: '0.625rem 1.5rem', borderRadius: '0.75rem', fontSize: '0.875rem', fontWeight: 800 }}
             >
-              🏆 Xếp hạng phòng
+              🏆 Bảng vàng thi đua
             </button>
           </div>
         )}
 
         {loading ? (
-          <div className="text-center py-24 text-slate-400">
-            <div className="text-4xl mb-3 animate-spin">⏳</div>
-            <p>Đang tải dữ liệu KPI...</p>
+          <div style={{ textAlign: 'center', padding: '10rem 0' }}>
+            <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: 'conic-gradient(from 0deg, var(--primary-light), transparent)', animation: 'spin-slow 0.8s linear infinite', margin: '0 auto' }} />
+            <p style={{ marginTop: '1.5rem', color: 'var(--text-secondary)', fontWeight: 700, letterSpacing: '0.05em' }}>ĐANG TỔNG HỢP DỮ LIỆU KPI...</p>
           </div>
         ) : (
           <>
-            {/* ───── MY KPI ───── */}
+            {/* Cá nhân View */}
             {(tab === 'mine' || !canViewUnit) && myKpi && (
-              <div className="animate-fade-in">
-                {/* Hero card */}
-                <div className={`bg-white rounded-3xl border shadow-xl p-8 mb-6 ${levelConfig[myKpi.level]?.border || 'border-slate-200'}`}>
-                  <div className="flex flex-col md:flex-row items-center gap-8">
-                    {/* Ring */}
+              <div className="animate-slide-up">
+                <div className="glass-panel" style={{ padding: '3rem 2.5rem', borderRadius: '2rem', border: '1px solid rgba(0, 0, 0, 0.1)', background: 'rgba(255, 255, 255, 0.4)', marginBottom: '2.5rem', position: 'relative', overflow: 'hidden' }}>
+                  <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '6px', background: 'linear-gradient(90deg, #4f46e5, #06b6d4, #4f46e5)', backgroundSize: '200% 100%', animation: 'shimmer 3s infinite linear' }} />
+                  
+                  <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: '4rem', alignItems: 'center', justifyContent: 'center' }}>
                     <ScoreRing score={myKpi.score} level={myKpi.level} />
 
-                    {/* Info */}
-                    <div className="flex-1 text-center md:text-left">
-                      <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold mb-3 ${levelConfig[myKpi.level]?.bg} ${levelConfig[myKpi.level]?.text} border ${levelConfig[myKpi.level]?.border}`}>
-                        <span className="text-lg">{myKpi.levelIcon}</span>
-                        <span>{myKpi.level}</span>
-                      </div>
-                      <h2 className="text-2xl font-bold text-slate-800 mb-1">{myKpi.fullName}</h2>
-                      <p className="text-slate-400 font-mono text-sm mb-4">{myKpi.employeeCode || '—'}</p>
-                      {myKpi.isManagerKpi ? (
-                        <p className="text-sm text-slate-500">
-                          Công thức: (<strong className="text-blue-600">{Math.round(myKpi.unitAverageScore)}</strong> × 70%) 
-                          + (<strong className="text-indigo-600">{myKpi.personalScore}</strong> × 30%)
-                          {myKpi.reviewPenaltyPoints > 0 && <span> − phạt ngâm bài <strong className="text-red-600">{myKpi.reviewPenaltyPoints}</strong></span>}
-                          {' '} = <strong className="text-blue-600 text-lg">{myKpi.score}</strong> điểm
-                        </p>
-                      ) : (
-                        <p className="text-sm text-slate-500">
-                          Điểm nền <strong>100</strong> + thưởng <strong className="text-emerald-600">+{myKpi.bonusPoints}</strong> 
-                          {myKpi.penaltyPoints > 0 && <span> − phạt cá nhân <strong className="text-red-500">{myKpi.penaltyPoints}</strong></span>}
-                          {' '} = <strong className="text-blue-600 text-lg">{myKpi.score}</strong> điểm
-                        </p>
-                      )}
+                    <div style={{ flex: 1, minWidth: '320px' }}>
+                       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.75rem' }}>
+                          <h2 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--text-primary)', margin: 0 }}>{myKpi.fullName}</h2>
+                          <div className="animate-bounce-in" style={{ padding: '4px 12px', background: levelConfig[myKpi.level]?.border, color: levelConfig[myKpi.level]?.text, borderRadius: '8px', fontSize: '0.75rem', fontWeight: 900 }}>{levelConfig[myKpi.level]?.icon} {myKpi.level}</div>
+                       </div>
+                       <p style={{ color: 'var(--text-muted)', fontFamily: 'monospace', fontSize: '0.9rem', marginBottom: '1.5rem', letterSpacing: '0.05em' }}>Mã nhân sự: {myKpi.employeeCode}</p>
+                       
+                       <div className="glass-card" style={{ padding: '1.25rem', borderRadius: '1rem', border: '1px solid rgba(0, 0, 0, 0.05)', background: 'rgba(0, 0, 0, 0.02)' }}>
+                          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.8 }}>
+                            {myKpi.isManagerKpi ? (
+                              <>Phương thức đánh giá Trưởng phòng: [Trung bình phòng <b>{Math.round(myKpi.unitAverageScore)}</b> × 70%] + [Cá nhân <b>{myKpi.personalScore}</b> × 30%]</>
+                            ) : (
+                              <>Điểm KPI của bạn được tính dựa trên số lượng công việc hoàn thành và thời gian thực hiện so với hạn chốt.</>
+                            )}
+                          </p>
+                       </div>
                     </div>
 
-                    {/* Stats */}
-                    <div className="grid grid-cols-2 gap-3 min-w-[220px]">
-                      <StatBox label="Tổng task" value={myKpi.totalTasks} color="slate" />
-                      <StatBox label="Hoàn thành đúng hạn" value={myKpi.completedOnTime} sub="+5 điểm/task" color="emerald" />
-                      <StatBox label="Hoàn thành trễ" value={myKpi.completedLate} color="amber" />
-                      <StatBox label="Quá hạn" value={myKpi.overdueTasks} sub="Phạt lũy tiến" color="red" />
+                    <div className="grid grid-cols-2 gap-4 stagger-children">
+                       <StatBox label="Nhiệm vụ" value={myKpi.totalTasks} />
+                       <StatBox label="Đúng hạn" value={myKpi.completedOnTime} color="#10b981" />
+                       <StatBox label="Trễ hạn" value={myKpi.completedLate} color="#f59e0b" />
+                       <StatBox label="Bị từ chối" value={myKpi.rejectedReports} color="#ef4444" />
                     </div>
                   </div>
-
-                  {/* Warning */}
-                  {myKpi.isAtRisk && (
-                    <div className="mt-6 bg-red-50 border border-red-200 rounded-2xl px-5 py-4 flex items-start gap-3">
-                      <span className="text-2xl">⚠️</span>
-                      <div>
-                        <p className="font-semibold text-red-600 text-sm">Cảnh báo hiệu suất</p>
-                        <p className="text-red-500 text-sm mt-0.5">{myKpi.warningMessage}</p>
-                      </div>
-                    </div>
-                  )}
                 </div>
 
-                {/* Detailed breakdown */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-white rounded-2xl border border-slate-200 shadow p-5">
-                    <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2">
-                      <span>📋</span> Tổng quan task
-                    </h3>
-                    <div className="space-y-3">
-                      {[
-                        { label: 'Tổng task được giao', value: myKpi.totalTasks, color: 'text-slate-700' },
-                        { label: 'Hoàn thành đúng hạn', value: myKpi.completedOnTime, color: 'text-emerald-600' },
-                        { label: 'Hoàn thành trễ hạn', value: myKpi.completedLate, color: 'text-amber-500' },
-                        { label: 'Quá hạn (chưa nộp)', value: myKpi.overdueTasks, color: 'text-red-500' },
-                        { label: 'Báo cáo bị từ chối', value: myKpi.rejectedReports, color: 'text-red-400' },
-                      ].map(r => (
-                        <div key={r.label} className="flex justify-between items-center py-1.5 border-b border-slate-50">
-                          <span className="text-sm text-slate-500">{r.label}</span>
-                          <span className={`font-bold text-sm ${r.color}`}>{r.value}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="bg-white rounded-2xl border border-slate-200 shadow p-5">
-                    <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2">
-                      <span>🎯</span> Cơ cấu điểm
-                    </h3>
-                    <div className="space-y-3">
-                      {myKpi.isManagerKpi ? (
-                        <>
-                          <div className="flex justify-between items-center py-1.5 border-b border-slate-50">
-                            <span className="text-sm text-slate-500">Trung bình phòng (70%)</span>
-                            <span className="font-bold text-slate-700">{Math.round(myKpi.unitAverageScore * 0.7)}</span>
-                          </div>
-                          <div className="flex justify-between items-center py-1.5 border-b border-slate-50">
-                            <span className="text-sm text-slate-500">Hiệu suất cá nhân (30%)</span>
-                            <span className="font-bold text-slate-700">{Math.round(myKpi.personalScore * 0.3)}</span>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div className="flex justify-between items-center py-1.5 border-b border-slate-50">
-                            <span className="text-sm text-slate-500">Điểm nền</span>
-                            <span className="font-bold text-slate-700">100</span>
-                          </div>
-                          <div className="flex justify-between items-center py-1.5 border-b border-slate-50">
-                            <span className="text-sm text-emerald-500">+ Hoàn thành đúng hạn</span>
-                            <span className="font-bold text-emerald-600">+{myKpi.bonusPoints}</span>
-                          </div>
-                          <div className="flex justify-between items-center py-1.5 border-b border-slate-50">
-                            <span className="text-sm text-red-400">− Phạt trễ hạn cá nhân</span>
-                            <span className="font-bold text-red-500">−{myKpi.penaltyPoints}</span>
-                          </div>
-                        </>
-                      )}
-                      
-                      {myKpi.reviewPenaltyPoints > 0 && (
-                        <div className="flex justify-between items-center py-1.5 border-b border-slate-50">
-                          <span className="text-sm text-red-600">− Phạt ngâm duyệt (SLA)</span>
-                          <span className="font-bold text-red-600">−{myKpi.reviewPenaltyPoints}</span>
-                        </div>
-                      )}
-                      <div className="flex justify-between items-center pt-2">
-                        <span className="font-semibold text-slate-700">Tổng điểm</span>
-                        <span className="font-bold text-blue-600 text-lg">{myKpi.score}</span>
+                <div className="grid md:grid-cols-2 gap-8 stagger-children">
+                   {/* Breakdown card */}
+                   <div className="glass-panel hover-glow" style={{ padding: '2rem', borderRadius: '1.75rem' }}>
+                      <h3 style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '1.5rem', fontSize: '1.1rem' }}>🏆 Chi tiết biến động điểm số</h3>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                         <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '1rem', borderBottom: '1px solid rgba(0, 0, 0, 0.05)' }}>
+                            <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Cơ sở KPI</span>
+                            <span style={{ fontWeight: 900, color: 'var(--text-primary)' }}>100</span>
+                         </div>
+                         <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '1rem', borderBottom: '1px solid rgba(0, 0, 0, 0.05)' }}>
+                            <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Thành tích công việc (+)</span>
+                            <span style={{ fontWeight: 900, color: '#10b981' }}>+{myKpi.bonusPoints}</span>
+                         </div>
+                         <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '1rem', borderBottom: '1px solid rgba(0, 0, 0, 0.05)' }}>
+                            <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Khấu trừ vi phạm (-)</span>
+                            <span style={{ fontWeight: 900, color: '#ef4444' }}>-{myKpi.penaltyPoints}</span>
+                         </div>
+                         {myKpi.reviewPenaltyPoints > 0 && (
+                           <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '1rem', borderBottom: '1px solid rgba(0, 0, 0, 0.05)' }}>
+                              <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 600 }}>SLA Duyệt báo cáo (Admin/Mgr)</span>
+                              <span style={{ fontWeight: 900, color: '#ef4444' }}>-{myKpi.reviewPenaltyPoints}</span>
+                           </div>
+                         )}
+                         <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '1rem' }}>
+                            <span style={{ fontWeight: 900, color: 'var(--text-primary)', fontSize: '1.1rem' }}>CHỈ SỐ CUỐI CÙNG</span>
+                            <span className="gradient-text" style={{ fontSize: '1.75rem', fontWeight: 900 }}>{myKpi.score}</span>
+                         </div>
                       </div>
-                    </div>
-                  </div>
+                   </div>
 
-                  <div className="bg-white rounded-2xl border border-slate-200 shadow p-5">
-                    <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2">
-                      <span>📖</span> Thang điểm
-                    </h3>
-                    <div className="space-y-3">
-                      {[
-                        { range: '≥ 90', level: 'Xuất sắc', icon: '⭐', cfg: levelConfig['Xuất sắc'] },
-                        { range: '75 – 89', level: 'Tốt', icon: '✅', cfg: levelConfig['Tốt'] },
-                        { range: '60 – 74', level: 'Trung bình', icon: '⚠️', cfg: levelConfig['Trung bình'] },
-                        { range: '< 60', level: 'Yếu', icon: '🔴', cfg: levelConfig['Yếu'] },
-                      ].map(r => (
-                        <div key={r.level} className={`flex items-center gap-3 px-3 py-2 rounded-xl border ${r.cfg.bg} ${r.cfg.border}`}>
-                          <span className="text-lg">{r.icon}</span>
-                          <div className="flex-1">
-                            <p className={`text-xs font-bold ${r.cfg.text}`}>{r.level}</p>
-                            <p className="text-xs text-slate-400">{r.range} điểm</p>
-                          </div>
-                          {myKpi.level === r.level && (
-                            <span className="text-xs bg-blue-500 text-white px-2 py-0.5 rounded-full font-bold">Bạn</span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                   {/* Scale card */}
+                   <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '1.75rem' }}>
+                      <h3 style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '1.5rem', fontSize: '1.1rem' }}>📏 Xếp loại Tiêu chuẩn</h3>
+                      <div className="flex flex-col gap-3">
+                         {Object.entries(levelConfig).map(([name, cfg]) => {
+                           const isCurrent = myKpi.level === name
+                           return (
+                             <div key={name} className={isCurrent ? 'animate-pulse-glow' : ''} style={{ 
+                               display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', borderRadius: '1rem', 
+                               background: isCurrent ? `rgba(0, 0, 0, 0.05)` : 'rgba(0, 0, 0, 0.02)',
+                               border: isCurrent ? `1px solid ${cfg.border}` : '1px solid transparent',
+                               transition: 'all 0.3s'
+                             }}>
+                               <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: `rgba(${cfg.bar === '#10b981' ? '16, 185, 129' : cfg.bar === '#3b82f6' ? '59, 130, 246' : '245, 158, 11'}, 0.1)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', border: `1px solid ${cfg.border}` }}>{cfg.icon}</div>
+                               <div style={{ flex: 1 }}>
+                                 <p style={{ fontSize: '0.85rem', fontWeight: 900, color: cfg.bar, margin: 0 }}>{name}</p>
+                                 <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: 0, fontWeight: 700 }}>
+                                    {name === 'Xuất sắc' ? 'Đạt trên 90 điểm' : name === 'Tốt' ? 'Đạt từ 75 đến 89 điểm' : name === 'Trung bình' ? 'Đạt từ 60 đến 74 điểm' : 'Dưới 60 điểm'}
+                                 </p>
+                               </div>
+                               {isCurrent && <span className="badge badge-blue">HIỆN TẠI</span>}
+                             </div>
+                           )
+                         })}
+                      </div>
+                   </div>
                 </div>
               </div>
             )}
 
-            {/* ───── UNIT RANKING ───── */}
+            {/* Thứ hạng phòng View */}
             {tab === 'unit' && canViewUnit && (
               <div className="animate-fade-in">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold text-slate-700">🏆 Bảng xếp hạng phòng</h2>
-                  <span className="text-sm text-slate-400">{unitKpi.length} nhân viên</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+                   <div>
+                     <h2 style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 900, color: 'var(--text-primary)', fontSize: '1.25rem', margin: 0 }}>🏆 Vinh danh Nhân sự tiêu biểu</h2>
+                     <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Cập nhật bảng xếp hạng thi đua tuần/tháng</p>
+                   </div>
+                   <span className="badge badge-purple" style={{ padding: '0.4rem 1rem' }}>{unitKpi.length} THÀNH VIÊN</span>
                 </div>
 
                 {unitKpi.length === 0 ? (
-                  <div className="text-center py-20 text-slate-400">
-                    <div className="text-5xl mb-4">😶</div>
-                    <p>Chưa có dữ liệu KPI nhân viên</p>
+                  <div className="glass-panel" style={{ padding: '8rem 2rem', textAlign: 'center' }}>
+                     <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>Dữ liệu xếp hạng đang được hệ thống xử lý...</p>
                   </div>
                 ) : (
-                  <>
-                    {/* Top 3 podium */}
-                    {unitKpi.length >= 3 && (
-                      <div className="grid grid-cols-3 gap-4 mb-8">
-                        {[
-                          { idx: 1, medal: '🥈', height: 'pt-6' },
-                          { idx: 0, medal: '🥇', height: 'pt-0' },
-                          { idx: 2, medal: '🥉', height: 'pt-10' },
-                        ].map(({ idx, medal, height }) => {
-                          const d = unitKpi[idx]
-                          if (!d) return null
-                          const cfg = levelConfig[d.level] || levelConfig['Tốt']
-                          return (
-                            <div key={idx} className={`${height} flex flex-col items-center`}>
-                              <div className="text-3xl mb-2">{medal}</div>
-                              <div className={`w-full bg-white rounded-2xl border ${cfg.border} shadow-lg p-4 text-center`}>
-                                <div className="text-2xl font-bold text-slate-800 mb-0.5">{d.score}</div>
-                                <div className={`text-xs font-bold ${cfg.text} mb-2`}>{d.levelIcon} {d.level}</div>
-                                <div className="font-semibold text-slate-700 text-sm">{d.fullName}</div>
-                                <div className="text-xs text-slate-400 font-mono">{d.employeeCode || '—'}</div>
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )}
-
-                    {/* Full list */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {unitKpi.map((d, i) => (
-                        <div key={d.userId} className="relative">
-                          <span className="absolute -top-2 -left-2 w-6 h-6 bg-slate-600 text-white text-xs font-bold rounded-full flex items-center justify-center z-10">
-                            {i + 1}
-                          </span>
-                          <KpiCard data={d} isMe={d.userId === userId} />
-                        </div>
-                      ))}
-                    </div>
-                  </>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 stagger-children">
+                     {unitKpi.map((d, i) => (
+                       <div key={d.userId} className="animate-float-premium" style={{ animationDelay: `${i * 0.15}s`, animationDuration: `${6 + i}s` }}>
+                          <KpiCard data={d} isMe={d.userId === userId} rank={i + 1} />
+                       </div>
+                     ))}
+                  </div>
                 )}
               </div>
             )}

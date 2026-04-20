@@ -8,18 +8,18 @@ import StatusBadge from '../components/StatusBadge'
 export default function Progress() {
   const [tasks, setTasks] = useState([])
   const [selectedTask, setSelectedTask] = useState('')
-  const [percent, setPercent] = useState(50)
+  const [percent, setPercent] = useState(100)
   const [description, setDescription] = useState('')
   const [file, setFile] = useState(null)
   const [progresses, setProgresses] = useState([])
   const [filterStatus, setFilterStatus] = useState('')
   const [loading, setLoading] = useState(false)
+  const [hoursSpent, setHoursSpent] = useState(0) // ✅ MỚI
   const { userId, role } = useAuth()
 
   useEffect(() => {
     if (role !== null) {
       fetchProgresses()
-      // Chỉ User mới cần danh sách task để nộp báo cáo
       if (role === 'User') fetchMyTasks()
     }
   }, [role])
@@ -27,7 +27,6 @@ export default function Progress() {
   const fetchMyTasks = async () => {
     try {
       const res = await api.get('/tasks', { params: { page: 1, size: 100, myTasks: true } })
-      // Chỉ hiện task chưa hoàn thành
       setTasks((res.data.data || []).filter(t => t.status !== 'Approved'))
     } catch (err) {
       console.error(err)
@@ -38,7 +37,6 @@ export default function Progress() {
     try {
       const res = await api.get('/progress', { params: { page: 1, size: 100 } })
       const all = res.data.data || []
-      // Backend đã lọc theo phòng cho Manager; User lọc theo chính mình
       if (role === 'User') {
         setProgresses(all.filter(p => p.userId === userId))
       } else {
@@ -52,6 +50,7 @@ export default function Progress() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!selectedTask) { toast.error('Vui lòng chọn công việc!'); return }
+    if (!file) { toast.error('Bắt buộc đính kèm file minh chứng kết quả!'); return }
     setLoading(true)
     try {
       let fileId = null
@@ -69,13 +68,15 @@ export default function Progress() {
         userId,
         percent: parseInt(percent),
         description,
-        fileId
+        fileId,
+        hoursSpent: parseFloat(hoursSpent) || 0 // ✅ MỚI
       })
 
       toast.success('✅ Gửi báo cáo tiến độ thành công!')
       setSelectedTask('')
-      setPercent(50)
+      setPercent(100)
       setDescription('')
+      setHoursSpent(0) // ✅ MỚI
       setFile(null)
       fetchProgresses()
     } catch (err) {
@@ -90,22 +91,22 @@ export default function Progress() {
     : progresses
 
   const getProgressColor = (p) => {
-    if (p >= 100) return 'from-green-500 to-emerald-500'
-    if (p >= 70) return 'from-blue-500 to-indigo-500'
-    if (p >= 40) return 'from-yellow-400 to-orange-400'
-    return 'from-red-400 to-rose-400'
+    if (p >= 100) return 'linear-gradient(90deg, #10b981, #059669)'
+    if (p >= 70) return 'linear-gradient(90deg, #4f46e5, #06b6d4)'
+    if (p >= 40) return 'linear-gradient(90deg, #f59e0b, #d97706)'
+    return 'linear-gradient(90deg, #ef4444, #dc2626)'
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="page-container page-enter">
       <Navbar />
-      <div className="p-6 max-w-5xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
+      <div style={{ padding: '1.75rem 2rem', maxWidth: '1200px', margin: '0 auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.75rem', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <h2 className="text-2xl font-bold text-gray-800">
-              {role === 'Manager' ? '📊 Giám sát tiến độ' : '📝 Báo cáo tiến độ'}
+            <h2 className="section-title">
+              {role === 'Manager' ? '📊 Giám sát tiến độ' : '📝 Báo cáo công việc'}
             </h2>
-            <p className="text-sm text-gray-400 mt-1">
+            <p className="section-subtitle">
               {role === 'Manager'
                 ? 'Theo dõi tình hình thực hiện công việc của phòng ban'
                 : 'Cập nhật và theo dõi tiến độ các công việc được giao'}
@@ -115,7 +116,8 @@ export default function Progress() {
             <select
               value={filterStatus}
               onChange={e => setFilterStatus(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              className="input-modern"
+              style={{ width: 'auto', minWidth: '180px' }}
             >
               <option value="">Tất cả trạng thái</option>
               <option value="Submitted">Chờ duyệt</option>
@@ -125,23 +127,22 @@ export default function Progress() {
           )}
         </div>
 
-        {/* Form báo cáo — CHỈ DÀNH CHO NHÂN VIÊN (User) */}
         {role === 'User' && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
-            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <span className="w-2 h-6 bg-blue-600 rounded-full"></span>
-              Gửi báo cáo tiến độ mới
+          <div className="glass-panel animate-slide-up" style={{ padding: '1.5rem', marginBottom: '2rem', borderRadius: '1.25rem' }}>
+            <h3 style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 700, fontSize: '1.1rem', color: 'var(--text-primary)', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div style={{ width: '4px', height: '20px', background: 'var(--primary)', borderRadius: '2px' }} />
+              Gửi báo cáo mới
             </h3>
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.25rem' }}>
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                  <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
                     Chọn công việc *
                   </label>
                   <select
                     value={selectedTask}
                     onChange={e => setSelectedTask(e.target.value)}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
+                    className="input-modern"
                     required
                   >
                     <option value="">-- Chọn công việc --</option>
@@ -150,52 +151,116 @@ export default function Progress() {
                     ))}
                   </select>
                   {tasks.length === 0 && (
-                    <p className="text-xs text-amber-500 mt-1">⚠️ Bạn chưa được giao công việc nào</p>
+                    <p style={{ fontSize: '0.7rem', color: 'var(--warning)', marginTop: '0.5rem' }}>⚠️ Hiện không có công việc nào đang thực hiện</p>
+                  )}
+                  
+                  {selectedTask && (
+                    <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(79, 70, 229, 0.05)', border: '1px solid rgba(79, 70, 229, 0.1)', borderRadius: '0.75rem' }}>
+                      <p style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--primary-light)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Chi tiết yêu cầu</p>
+                      {(() => {
+                        const t = tasks.find(x => x.id === selectedTask)
+                        if (!t) return null
+                        return (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <p style={{ fontSize: '0.8125rem', color: 'var(--text-primary)' }}>{t.description || "Không có mô tả"}</p>
+                            {t.dueDate && (
+                              <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>⏰ Hạn chót: <b>{new Date(t.dueDate).toLocaleDateString('vi-VN')}</b></p>
+                            )}
+                            {t.files?.length > 0 && (
+                              <div style={{ paddingTop: '0.5rem', borderTop: '1px solid rgba(0, 0, 0, 0.05)' }}>
+                                <p style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--accent)', marginBottom: '0.25rem' }}>Tài liệu gốc:</p>
+                                {t.files.map(f => (
+                                  <a key={f.id} href={`${api.defaults.baseURL}/upload/${f.id}`} target="_blank" rel="noreferrer"
+                                     style={{ display: 'block', color: 'var(--accent)', fontSize: '0.75rem', textDecoration: 'none' }}>
+                                    📎 {f.fileName}
+                                  </a>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })()}
+                    </div>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
-                    % Hoàn thành — <span className="text-blue-600 font-bold">{percent}%</span>
+                  <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                    Tiến độ hoàn thành * (%)
+                  </label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={percent}
+                      onChange={e => setPercent(e.target.value)}
+                      className="input-modern"
+                      style={{ width: '80px' }}
+                      required
+                    />
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={percent}
+                      onChange={e => setPercent(e.target.value)}
+                      style={{ flex: 1, accentColor: 'var(--primary)' }}
+                    />
+                    <span style={{ fontWeight: 800, color: 'var(--primary-light)', width: '40px' }}>{percent}%</span>
+                  </div>
+                  <div style={{ marginTop: '1.25rem' }}>
+                    <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                      File minh chứng
+                    </label>
+                    <input
+                      type="file"
+                      onChange={e => setFile(e.target.files[0])}
+                      className="input-modern"
+                      style={{ padding: '0.5rem' }}
+                    />
+                    {file && <p style={{ fontSize: '0.7rem', color: 'var(--accent)', marginTop: '0.25rem' }}>📎 {file.name}</p>}
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                    Thời gian thực hiện (Số giờ) *
                   </label>
                   <input
-                    type="range" min="0" max="100" step="5"
-                    value={percent}
-                    onChange={e => setPercent(e.target.value)}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600 mt-4"
+                    type="number"
+                    step="0.5"
+                    min="0"
+                    max="48"
+                    value={hoursSpent}
+                    onChange={e => setHoursSpent(e.target.value)}
+                    className="input-modern"
+                    placeholder="VD: 2.5"
+                    required
                   />
+                  <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>💡 Nhập số giờ bạn đã thực sự bỏ ra cho đợt cập nhật này.</p>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
-                  Mô tả chi tiết công việc đã làm
+                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                  Nội dung báo cáo
                 </label>
                 <textarea
                   value={description}
                   onChange={e => setDescription(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
+                  className="input-modern"
                   rows={3}
-                  placeholder="Hôm nay bạn đã hoàn thành những gì?..."
+                  placeholder="Mô tả chi tiết những gì bạn đã làm..."
                 />
               </div>
 
-              <div className="flex flex-col md:flex-row items-end gap-4">
-                <div className="flex-1 w-full">
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
-                    File minh chứng (ảnh, tài liệu...)
-                  </label>
-                  <input
-                    type="file"
-                    onChange={e => setFile(e.target.files[0])}
-                    className="w-full border border-dashed border-gray-300 rounded-xl px-4 py-3 text-sm text-gray-500 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:border-blue-400 transition-all cursor-pointer"
-                  />
-                  {file && <p className="text-xs text-gray-500 mt-1">📎 {file.name}</p>}
-                </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <button
                   type="submit"
                   disabled={loading || tasks.length === 0}
-                  className="w-full md:w-auto bg-blue-600 text-white px-10 py-3 rounded-xl hover:bg-blue-700 font-bold shadow-lg shadow-blue-200 disabled:opacity-50 transition-all"
+                  className="btn-primary"
+                  style={{ minWidth: '160px', padding: '0.875rem' }}
                 >
                   {loading ? '⏳ Đang gửi...' : '📤 Gửi báo cáo'}
                 </button>
@@ -204,80 +269,96 @@ export default function Progress() {
           </div>
         )}
 
-        {/* Lịch sử tiến độ */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-6 py-4 border-b bg-gray-50 flex justify-between items-center">
-            <h3 className="font-bold text-gray-800">
-              {role === 'Manager' ? '📋 Báo cáo của phòng ban' : '📋 Lịch sử báo cáo của tôi'}
+        <div className="glass-panel animate-fade-in" style={{ borderRadius: '1.25rem', overflow: 'hidden' }}>
+          <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid rgba(0, 0, 0, 0.07)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3 style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 700, color: 'var(--text-primary)' }}>
+               📋 {role === 'Manager' ? 'Báo cáo của phòng ban' : 'Lịch sử báo cáo của tôi'}
             </h3>
-            <span className="text-xs text-gray-400 font-medium">{displayedProgresses.length} báo cáo</span>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{displayedProgresses.length} bản ghi</span>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-gray-400 uppercase text-[10px] font-bold tracking-wider">
+          <div style={{ overflowX: 'auto' }}>
+            <table className="modern-table">
+              <thead>
                 <tr>
-                  <th className="px-6 py-4 text-left">Công việc</th>
-                  {role === 'Manager' && <th className="px-6 py-4 text-left">Nhân viên</th>}
-                  <th className="px-6 py-4 text-left">% Hoàn thành</th>
-                  <th className="px-4 py-4 text-left">Minh chứng</th>
-                  <th className="px-6 py-4 text-left">Mô tả</th>
-                  <th className="px-6 py-4 text-left">Trạng thái</th>
-                  <th className="px-6 py-4 text-left">Ngày gửi</th>
+                  <th style={{ paddingLeft: '1.5rem' }}>Công việc</th>
+                  {role === 'Manager' && <th>Nhân viên</th>}
+                  <th>Tiến độ</th>
+                  <th>Minh chứng</th>
+                  <th>Số giờ</th>
+                  <th>Mô tả</th>
+                  <th>Trạng thái</th>
+                  <th>Nhận xét của sếp</th>
+                  <th style={{ paddingRight: '1.5rem' }}>Ngày gửi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody>
                 {displayedProgresses.length === 0 ? (
                   <tr>
-                    <td colSpan={role === 'Manager' ? 7 : 6} className="text-center py-16 text-gray-400 italic">
-                      {filterStatus ? 'Không có báo cáo nào với trạng thái này' : 'Chưa có báo cáo nào'}
+                    <td colSpan={role === 'Manager' ? 8 : 7} style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>
+                      <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📭</div>
+                      <p>Chưa có dữ liệu báo cáo nào</p>
                     </td>
                   </tr>
                 ) : (
                   displayedProgresses.map(p => (
-                    <tr key={p.id} className="hover:bg-blue-50/30 transition-colors">
-                      <td className="px-6 py-4 font-bold text-gray-800 max-w-[180px]">
-                        <span className="truncate block">{p.taskTitle || '—'}</span>
-                      </td>
+                    <tr key={p.id}>
+                      <td style={{ paddingLeft: '1.5rem', fontWeight: 700, color: 'var(--text-primary)' }}>{p.taskTitle || '—'}</td>
                       {role === 'Manager' && (
-                        <td className="px-6 py-4">
-                          <div className="flex flex-col">
-                            <span className="font-medium text-gray-700 text-xs">{p.userFullName}</span>
-                            <span className="text-[10px] font-mono text-blue-500 bg-blue-50 px-1 rounded w-fit">{p.userEmployeeCode}</span>
-                          </div>
+                        <td>
+                          <div style={{ fontWeight: 600, color: 'var(--text-secondary)', fontSize: '0.8125rem' }}>{p.userFullName}</div>
+                          <div style={{ color: 'var(--accent)', fontSize: '0.6rem', fontFamily: 'monospace' }}>{p.userEmployeeCode}</div>
                         </td>
                       )}
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-20 bg-gray-100 rounded-full h-2">
-                            <div
-                              className={`bg-gradient-to-r ${getProgressColor(p.percent)} h-2 rounded-full`}
-                              style={{ width: `${p.percent}%` }}
-                            />
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+                          <div className="progress-track" style={{ width: '60px' }}>
+                            <div className="progress-fill" style={{ width: `${p.percent}%`, background: getProgressColor(p.percent) }} />
                           </div>
-                          <span className="font-bold text-gray-700 text-xs">{p.percent}%</span>
+                          <span style={{ fontWeight: 800, fontSize: '0.8125rem', color: 'var(--text-primary)' }}>{p.percent}%</span>
                         </div>
                       </td>
-                      <td className="px-4 py-4">
+                      <td>
                         {p.files?.length > 0 ? (
-                          <div className="flex flex-col gap-1">
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                             {p.files.map(f => (
-                              <a key={f.id} href={`${api.defaults.baseURL}/upload/${f.id}`}
-                                target="_blank" rel="noreferrer"
-                                className="text-blue-600 hover:text-blue-800 text-[10px] font-bold flex items-center gap-1 underline underline-offset-2">
-                                📎 {f.fileName.length > 15 ? f.fileName.substring(0, 12) + '...' : f.fileName}
-                              </a>
+                              <button key={f.id} onClick={async () => {
+                                try {
+                                  // Secure download using API with Bearer token
+                                  const res = await api.get(`/upload/${f.id}`, { responseType: 'blob' });
+                                  const url = window.URL.createObjectURL(new Blob([res.data]));
+                                  const link = document.createElement('a');
+                                  link.href = url;
+                                  link.setAttribute('download', f.fileName || 'download');
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  link.parentNode.removeChild(link);
+                                } catch (error) {
+                                  console.error("Download failed", error);
+                                  toast.error("Không thể tải file, vui lòng thử lại sau.");
+                                }
+                              }} style={{ color: 'var(--accent)', fontSize: '0.75rem', textDecoration: 'none', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: 0 }}>
+                                📎 Tải về
+                              </button>
                             ))}
                           </div>
-                        ) : <span className="text-gray-300 text-[10px] italic">Không có</span>}
+                        ) : <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>—</span>}
                       </td>
-                      <td className="px-6 py-4 text-gray-500 text-xs max-w-[180px]">
-                        <p className="line-clamp-2">{p.description || '—'}</p>
+                      <td style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '0.8125rem' }}>{p.hoursSpent || 0}h</td>
+                      <td style={{ maxWidth: '200px' }}>
+                        <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                          {p.description || '—'}
+                        </p>
                       </td>
-                      <td className="px-6 py-4">
-                        <StatusBadge status={p.status} submittedLabel="Chờ duyệt" />
+                      <td><StatusBadge status={p.status} submittedLabel="Chờ duyệt" /></td>
+                      <td>
+                        {p.reviewComment ? (
+                          <div style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 600, fontStyle: 'italic', background: 'rgba(79, 70, 229, 0.05)', padding: '0.4rem', borderRadius: '0.5rem', border: '1px dashed var(--primary-light)' }}>
+                            💬 {p.reviewComment}
+                          </div>
+                        ) : <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>—</span>}
                       </td>
-                      <td className="px-6 py-4 text-gray-400 text-[10px] font-medium">
-                        {p.updatedAt ? new Date(p.updatedAt).toLocaleDateString('vi-VN') : '—'}
+                      <td style={{ paddingRight: '1.5rem', color: 'var(--text-muted)', fontSize: '0.75rem', fontFamily: 'monospace' }}>
+                        {p.updatedAt ? new Date(p.updatedAt + "Z").toLocaleString('vi-VN') : '—'}
                       </td>
                     </tr>
                   ))
