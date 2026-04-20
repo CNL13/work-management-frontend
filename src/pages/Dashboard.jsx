@@ -19,10 +19,7 @@ export default function Dashboard() {
       const res = await api.get(endpoint)
       setData(res.data)
     } catch (err) {
-      console.error('Dashboard error:', err)
-      console.error('Status:', err.response?.status)
-      console.error('Data:', err.response?.data)
-      alert(err.response?.data?.message || `Lỗi dashboard: ${err.response?.status || err.message}`)
+      console.error(err)
     } finally {
       setLoading(false)
     }
